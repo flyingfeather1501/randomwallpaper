@@ -13,6 +13,7 @@ rwp_init_vars () {
   rwp_cfg_used=0
   rwp_cfg=none
   rwp_handler_list=(mate gnome xfce pcmanfm pcmanfm-qt cinnamon feh deepin)
+  rwp_verbose=0
 
   # Get XDG_PICTURES_DIR from .config/user-dirs.dirs. Ex:"$HOME/Pictures"
   export $(cat $HOME/.config/user-dirs.dirs | grep PICTURES)
@@ -34,7 +35,7 @@ rwp_init_vars () {
 
 # Handle Options
 rwp_getopts () {
-  while getopts "h?t:d:c:w:ls" rwp_opt; do
+  while getopts "h?t:d:c:w:lvs" rwp_opt; do
     case "$rwp_opt" in
     h|\?)
         echo "
@@ -47,6 +48,7 @@ rwp_getopts () {
    -c <config file>         Use config file to set wait time for individual images
    -w <wallpaper handler>   Set wallpaper handler manually (default:auto)
    -l                       List all wallpaper handlers
+   -v                       Print out some debug information
    -h or -?                 Show help (this message)
   "
         exit 0
@@ -99,6 +101,9 @@ rwp_getopts () {
     s)
       rwp_sleep_first=1
       ;;
+    v)
+      rwp_verbose=1
+      ;;
     l)
       IFS=,; echo Available wallpaper handlers: "${rwp_handler_list[*]}"
       exit 0
@@ -126,7 +131,7 @@ rwp_loop () {
         if echo $rwp_wallpaper | grep ${line%\ *}; then  # if rwp_wallpaper is in the cfg
           rwp_sleep_time=${line#*\ }  # set rwp_sleep_time to that defined in the cfg
           rwp_cfg_used=1
-          echo rwp_sleep_time for this image is $rwp_sleep_time
+          [[ $rwp_verbose == 1 ]] && echo rwp_sleep_time for this image is $rwp_sleep_time
           break
         else
           rwp_cfg_used=0
@@ -137,7 +142,7 @@ rwp_loop () {
     # Use default rwp_sleep_time
     if [[ $rwp_cfg_used == 0 || $rwp_cfg_file_set == 0 ]]; then
       rwp_sleep_time=$rwp_sleep_time_def
-      echo rwp_sleep_time for this image is not specified in config
+      [[ $rwp_verbose == 1 ]] && echo rwp_sleep_time for this image is not specified in config
     fi
 
 
@@ -294,19 +299,20 @@ else
   exit 1
 fi
 
-echo "rwp_sleep_time_def is $rwp_sleep_time_def"
-echo "rwp_dir is $rwp_dir"
-echo "rwp_cfg is $rwp_cfg"
-echo ${rwp_handler[*]}
+if [[ $rwp_verbose == 1 ]]; then
+  echo "rwp_sleep_time_def is $rwp_sleep_time_def"
+  echo "rwp_dir is $rwp_dir"
+  echo "rwp_cfg is $rwp_cfg"
+  echo "${rwp_handler[*]}"
+fi
+
 if [[ ${rwp_handler[0]} == auto ]]; then
   # Detect Desktop
   rwp_detect # will set rwp_handler according to environment variables
-
-  echo "Wallpaper handlers: ${rwp_handler[*]}" # it does not exist
-
+  [[ $rwp_verbose == 1 ]] && echo "Wallpaper handlers: ${rwp_handler[*]}" # it does not exist
   rwp_loop
 else # when rwp_handler is set
-  echo "Wallpaper handlers: ${rwp_handler[*]}"
+  [[ $rwp_verbose == 1 ]] && echo "Wallpaper handlers: ${rwp_handler[*]}"
   rwp_loop
 fi
 

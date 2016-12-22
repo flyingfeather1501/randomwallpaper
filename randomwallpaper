@@ -1,0 +1,316 @@
+#!/bin/bash
+## Untitled Random Wallpaper Slideshow Script. Name is subject to change.
+## TODO: Pause?
+
+#### Functions ####
+
+rwp_init_vars () {
+  # Initialize variables with default values
+  OPTIND=1
+  rwp_sleep_time_def=1m
+  rwp_sleep_first=0
+  rwp_cfg_file_set=0
+  rwp_handler=('auto')
+  rwp_cfg_used=0
+  rwp_cfg=none
+  rwp_handler_list=(mate gnome xfce pcmanfm pcmanfm-qt cinnamon feh deepin)
+
+  # Get XDG_PICTURES_DIR from .config/user-dirs.dirs. Ex:"$HOME/Pictures"
+  export $(cat $HOME/.config/user-dirs.dirs | grep PICTURES)
+  # Cut from " to /.  Ex:"$HOME/Picures" -> Pictures"
+  XDG_PICTURES_DIR=$(echo ${XDG_PICTURES_DIR#\"*/})
+  # Cut off the last ". Ex: Pictures" -> Pictures
+  XDG_PICTURES_DIR=$(echo ${XDG_PICTURES_DIR%\"})
+  # Ex. Pictures -> /home/user/Pictures/Wallpapers
+  rwp_dir=$HOME/$XDG_PICTURES_DIR/Wallpapers
+
+  # Use .rwp.cfg if it exists
+  if [[ -f $HOME/.rwp.cfg ]]; then
+    rwp_cfg_file_set=1
+    rwp_cfg=$HOME/.rwp.cfg
+  else
+    rwp_cfg_file_set=0
+  fi
+}
+
+# Handle Options
+rwp_getopts () {
+  while getopts "h?t:d:c:w:ls" rwp_opt; do
+    case "$rwp_opt" in
+    h|\?)
+        echo "
+  Usage: randomwallpaper [OPTIONS]
+
+  Options:
+   -t <time>                Set global wait time (default:1m)
+   -d <DIR>                 Set wallpaper directory (default:$HOME/$XDG_PICTURES_DIR/Wallpapers)
+   -s                       Change wallpaper after sleeping, prevents immediate change on execution
+   -c <config file>         Use config file to set wait time for individual images
+   -w <wallpaper handler>   Set wallpaper handler manually (default:auto)
+   -l                       List all wallpaper handlers
+   -h or -?                 Show help (this message)
+  "
+        exit 0
+      ;;
+    t)
+      rwp_sleep_time_def=$OPTARG
+      ;;
+    d)
+      rwp_dir=$OPTARG
+      ;;
+    c)
+      rwp_cfg=$OPTARG
+      rwp_cfg_file_set=1
+      ;;
+    w)
+      rwp_handler[0]=noauto
+      case $OPTARG in
+      MATE|mate)
+          rwp_handler+=('mate')
+          ;;
+      GNOME|gnome)
+          rwp_handler+=('gnome')
+          ;;
+      XFCE|xfce)
+          rwp_handler+=('xfce')
+          ;;
+      LXDE|lxde)
+          rwp_handler+=('pcmanfm')
+          ;;
+      pcmanfm)
+          rwp_handler+=('pcmanfm')
+          ;;
+      pcmanfm-qt)
+          rwp_handler+=('pcmanfm-qt')
+          ;;
+      Cinnamon|cinnamon)
+          rwp_handler+=('cinnamon')
+          ;;
+      feh)
+          rwp_handler+=('feh')
+          ;;
+      deepin|Deepin)
+          rwp_handler+=('deepin')
+          ;;
+      *)
+          IFS=,; echo Available wallpaper handlers: "${rwp_handler_list[*]}"
+          exit 1
+      esac
+      ;;
+    s)
+      rwp_sleep_first=1
+      ;;
+    l)
+      IFS=,; echo Available wallpaper handlers: "${rwp_handler_list[*]}"
+      exit 0
+      ;;
+    esac
+  done
+}
+
+# Main Loop
+# rwp_loop <WP handler>
+rwp_loop () {
+
+  while :; do
+
+    # Rescan file list
+    rwp_files=($rwp_dir/*)
+    # Randomly select a file
+    rwp_wallpaper=$(printf "%s\n" "${rwp_files[RANDOM % ${#rwp_files[@]}]}")
+
+
+    # Read rwp_sleep_time only when config file is set
+    if [[ $rwp_cfg_file_set == 1 ]]; then
+      # Read cfg file
+      while read -r line; do
+        if echo $rwp_wallpaper | grep ${line%\ *}; then  # if rwp_wallpaper is in the cfg
+          rwp_sleep_time=${line#*\ }  # set rwp_sleep_time to that defined in the cfg
+          rwp_cfg_used=1
+          echo rwp_sleep_time for this image is $rwp_sleep_time
+          break
+        else
+          rwp_cfg_used=0
+        fi
+      done < $rwp_cfg
+    fi
+
+    # Use default rwp_sleep_time
+    if [[ $rwp_cfg_used == 0 || $rwp_cfg_file_set == 0 ]]; then
+      rwp_sleep_time=$rwp_sleep_time_def
+      echo rwp_sleep_time for this image is not specified in config
+    fi
+
+
+    # sleep first if $rwp_sleep_first=1
+    if [[ $rwp_sleep_first == 1 ]]; then
+      sleep $rwp_sleep_time
+    fi
+
+    # for every handler, if $rwp_handler contains a handler, run it
+    # No need to worry about auto, if $rwp_handler == auto it'd be set to
+    # something else in rwp_detect
+    for i in "${rwp_handler_list[@]}"; do
+      [[ ${rwp_handler[*]} =~ $i ]] && rwp_set_$i "$rwp_wallpaper"
+    done
+
+    # sleep after if $rwp_sleep_first=0
+    if [[ $rwp_sleep_first == 0 ]]; then
+      sleep $rwp_sleep_time
+    fi
+
+  done
+}
+
+
+rwp_detect () {
+  # Detect DE in use and start loops
+
+  # MATE
+  if [[
+  $XDG_CURRENT_DESKTOP == "MATE" ||
+  $XDG_CURRENT_DESKTOP == "mate" ]]; then
+    rwp_handler=('mate')
+
+  # Budgie
+  elif [[
+  $XDG_SESSION_DESKTOP == "budgie-desktop" ||
+  $DESKTOP_SESSION == "budgie-desktop" ||
+  $GDMSESSION == "budgie-desktop" ]]; then
+    rwp_handler=('gnome')
+
+  # Pantheon
+  elif [[
+  $XDG_SESSION_DESKTOP == "pantheon" ||
+  $DESKTOP_SESSION == "pantheon" ||
+  $GDMSESSION == "pantheon" ]]; then
+    rwp_handler=('gnome')
+
+  # GNOME & Cinnamon
+  elif [[
+  $XDG_CURRENT_DESKTOP == "GNOME" ||
+  $XDG_CURRENT_DESKTOP == "gnome" ]]; then
+    if [[ $GDMSESSION == "cinnamon" ]]; then
+      rwp_handler=('cinnamon')
+    else
+      rwp_handler=('gnome')
+    fi
+
+  # Cinnamon
+  elif [[ $XDG_CURRENT_DESKTOP == "X-Cinnamon" ]]; then
+    rwp_handler=('cinnamon')
+
+  # Unity
+  elif [[ $XDG_CURRENT_DESKTOP == "Unity" ]]; then
+    if [[ -z ${MIR_SERVER_NAME+x} ]]; then # Check if Mir is in use
+      rwp_handler=('gnome') # It's not
+    else
+      rwp_exit "Unity with Mir" # It is
+    fi
+
+  # XFCE
+  elif [[ $XDG_CURRENT_DESKTOP == "XFCE" ]]; then
+    rwp_handler=('xfce')
+
+  # LXDE
+  elif [[ $XDG_CURRENT_DESKTOP == "LXDE" ]]; then
+    rwp_handler=('pcmanfm')
+
+  # LXQt
+  elif [[
+  $XDG_CURRENT_DESKTOP == "LXQt" ||
+  $GDMSESSION == "lxqt" ]]; then
+    rwp_handler=('pcmanfm-qt')
+
+  # Deepin
+  elif [[
+  $XDG_CURRENT_DESKTOP == "Deepin" ||
+  $GDMSESSION == "deepin" ]]; then
+    rwp_handler=('deepin')
+
+  # KDE
+  elif [[ $GDMSESSION == "plasma_desktop" ]]; then
+    rwp_exit "KDE Plasma"
+
+  # Other
+  else
+    rwp_exit "Desktop in use"
+  fi
+}
+
+rwp_set_mate () {
+  gsettings set org.mate.background picture-filename "$1"
+}
+
+rwp_set_gnome () {
+  gsettings set org.gnome.desktop.background picture-uri "file://$1"
+}
+
+rwp_set_cinnamon () {
+  gsettings set org.cinnamon.desktop.background picture-uri "file://$1"
+}
+
+rwp_set_feh () {
+  feh --bg-scale "$1"
+}
+
+rwp_set_pcmanfm () {
+  pcmanfm --set-wallpaper "$1"
+}
+
+rwp_set_pcmanfm-qt () {
+  pcmanfm-qt --set-wallpaper "$1"
+}
+
+rwp_set_xfce () {
+  export rwp_set_xfce_wspc=$(($(xfconf-query -c xfwm4 -p /general/workspace_count)-1))
+  for ((i=rwp_set_xfce_wspc; i>=0; i--)); do
+    xfconf-query -c xfce4-desktop -p /backdrop/screen0/monitor0/workspace$i/last-image -s "$1"
+  done
+}
+
+rwp_set_deepin () {
+  gsettings set com.deepin.wrap.gnome.desktop.background picture-uri "$1"
+}
+
+
+rwp_exit () {
+  echo "$1 is not supported"
+  exit 1
+}
+
+#~~~ Functions ~~~#
+
+
+#### Main Logic ####
+
+rwp_init_vars
+rwp_getopts "$@"
+
+# check is $rwp_dir exist
+if ls $rwp_dir > /dev/null; then
+  rwp_files=($rwp_dir/*)
+else
+  echo "$rwp_dir does not exist"
+  exit 1
+fi
+
+echo "rwp_sleep_time_def is $rwp_sleep_time_def"
+echo "rwp_dir is $rwp_dir"
+echo "rwp_cfg is $rwp_cfg"
+echo ${rwp_handler[*]}
+if [[ ${rwp_handler[0]} == auto ]]; then
+  # Detect Desktop
+  rwp_detect # will set rwp_handler according to environment variables
+
+  echo "Wallpaper handlers: ${rwp_handler[*]}" # it does not exist
+
+  rwp_loop
+else # when rwp_handler is set
+  echo "Wallpaper handlers: ${rwp_handler[*]}"
+  rwp_loop
+fi
+
+#~~~ Main Logic ~~~#
+
+# Main Logic is not a function because we'll never call it.

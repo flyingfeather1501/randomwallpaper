@@ -1,6 +1,5 @@
 #!/bin/bash
-## Untitled Random Wallpaper Slideshow Script. Name is subject to change.
-## TODO: Pause?
+## randomwallpaper
 
 #### Functions ####
 
@@ -117,7 +116,7 @@ rwp_loop () {
     # Rescan file list
     rwp_files=($rwp_dir/*)
     # Randomly select a file
-    rwp_wallpaper=$(printf "%s\n" "${rwp_files[RANDOM % ${#rwp_files[@]}]}")
+    rwp_wallpaper="${rwp_files[RANDOM % ${#rwp_files[@]}]}"
 
 
     # Read rwp_sleep_time only when config file is set

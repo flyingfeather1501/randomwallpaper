@@ -50,6 +50,16 @@ rwp_getopts () {
    -l                       List all wallpaper handlers
    -v                       Print out some debug information
    -h or -?                 Show help (this message)
+
+  Config file:
+   The contents after the last space in a line is passed to sleep.
+   In the example, sleep 1m will run after setting
+   more specific file name.png as the wallpaper.
+
+  Config file example:
+   more specific file name.png 1m
+   less exact file name 3m
+   file name 5m
   "
         exit 0
       ;;
@@ -123,13 +133,15 @@ rwp_loop () {
     # Randomly select a file
     rwp_wallpaper="${rwp_files[RANDOM % ${#rwp_files[@]}]}"
 
+    [[ $rwp_verbose == 1 ]] && echo "rwp_wallpaper is $rwp_wallpaper"
+
 
     # Read rwp_sleep_time only when config file is set
     if [[ $rwp_cfg_file_set == 1 ]]; then
       # Read cfg file
       while read -r line; do
-        if echo $rwp_wallpaper | grep ${line%\ *}; then  # if rwp_wallpaper is in the cfg
-          rwp_sleep_time=${line#*\ }  # set rwp_sleep_time to that defined in the cfg
+        if echo $rwp_wallpaper | grep "${line%\ *}"; then  # if rwp_wallpaper is in the cfg
+          rwp_sleep_time=${line##*\ }  # set rwp_sleep_time to that defined in the cfg
           rwp_cfg_used=1
           [[ $rwp_verbose == 1 ]] && echo rwp_sleep_time for this image is $rwp_sleep_time
           break

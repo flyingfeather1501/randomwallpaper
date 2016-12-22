@@ -15,14 +15,7 @@ rwp_init_vars () {
   rwp_handler_list=(mate gnome xfce pcmanfm pcmanfm-qt cinnamon feh deepin)
   rwp_verbose=0
 
-  # Get XDG_PICTURES_DIR from .config/user-dirs.dirs. Ex:"$HOME/Pictures"
-  export $(cat $HOME/.config/user-dirs.dirs | grep PICTURES)
-  # Cut from " to /.  Ex:"$HOME/Picures" -> Pictures"
-  XDG_PICTURES_DIR=$(echo ${XDG_PICTURES_DIR#\"*/})
-  # Cut off the last ". Ex: Pictures" -> Pictures
-  XDG_PICTURES_DIR=$(echo ${XDG_PICTURES_DIR%\"})
-  # Ex. Pictures -> /home/user/Pictures/Wallpapers
-  rwp_dir=$HOME/$XDG_PICTURES_DIR/Wallpapers
+  rwp_dir=$(xdg-user-dir PICTURES)/Wallpapers
 
   # Use .rwp.cfg if it exists
   if [[ -f $HOME/.rwp.cfg ]]; then

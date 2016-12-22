@@ -1,0 +1,14 @@
+randomwallpaper [OPTIONS]
+
+ Options:
+   -t <time>                Set global wait time (default:1m)
+   -d <DIR>                 Set wallpaper directory (default:$XDG_PICTURES_DIR/Wallpapers)
+   -c <config file>         Use config file to set wait time for individual images
+   -w <wallpaper handler>   Set wallpaper handler manually (default:auto)
+   -l                       List all wallpaper handlers
+   -h or -?                 Show help (this message)
+
+Config file format:
+<part of filename> <wait time for this image>
+[another filename] <wait time for this image>
+and so on.

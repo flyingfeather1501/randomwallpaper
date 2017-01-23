@@ -184,7 +184,7 @@ rwp_loop () {
     # No need to worry about auto, if $rwp_handler == auto it'd be set to
     # something else in rwp_detect
     for i in "${rwp_handler_list[@]}"; do
-      [[ ${rwp_handler[*]} =~ $i ]] && rwp_set_$i "$rwp_wallpaper"
+      [[ ${rwp_handler[*]} =~ $i ]] && rwp_set $i "$rwp_wallpaper"
     done
 
     # sleep after if $rwp_sleep_first=0
@@ -271,41 +271,28 @@ rwp_detect () {
   fi
 }
 
-rwp_set_mate () {
-  gsettings set org.mate.background picture-filename "$1"
+rwp_set () {
+  if [[ $1 == mate ]]; then
+    gsettings set org.mate.background picture-filename "$2"
+  elif [[ $1 == gnome ]]; then
+    gsettings set org.gnome.desktop.background picture-uri "file://$2"
+  elif [[ $1 == cinnamon ]]; then
+    gsettings set org.cinnamon.desktop.background picture-uri "file://$2"
+  elif [[ $1 == feh ]]; then
+    feh --bg-scale "$2"
+  elif [[ $1 == pcmanfm ]]; then
+    pcmanfm --set-wallpaper "$2"
+  elif [[ $1 == pcmanfm-qt ]]; then
+    pcmanfm-qt --set-wallpaper "$2"
+  elif [[ $1 == xfce ]]; then
+    export rwp_set_xfce_wspc=$(($(xfconf-query -c xfwm4 -p /general/workspace_count)-1))
+    for ((i=rwp_set_xfce_wspc; i>=0; i--)); do
+      xfconf-query -c xfce4-desktop -p /backdrop/screen0/monitor0/workspace$i/last-image -s "$2"
+    done
+  elif [[ $1 == deepin ]]; then
+    gsettings set com.deepin.wrap.gnome.desktop.background picture-uri "$2"
+  fi
 }
-
-rwp_set_gnome () {
-  gsettings set org.gnome.desktop.background picture-uri "file://$1"
-}
-
-rwp_set_cinnamon () {
-  gsettings set org.cinnamon.desktop.background picture-uri "file://$1"
-}
-
-rwp_set_feh () {
-  feh --bg-scale "$1"
-}
-
-rwp_set_pcmanfm () {
-  pcmanfm --set-wallpaper "$1"
-}
-
-rwp_set_pcmanfm-qt () {
-  pcmanfm-qt --set-wallpaper "$1"
-}
-
-rwp_set_xfce () {
-  export rwp_set_xfce_wspc=$(($(xfconf-query -c xfwm4 -p /general/workspace_count)-1))
-  for ((i=rwp_set_xfce_wspc; i>=0; i--)); do
-    xfconf-query -c xfce4-desktop -p /backdrop/screen0/monitor0/workspace$i/last-image -s "$1"
-  done
-}
-
-rwp_set_deepin () {
-  gsettings set com.deepin.wrap.gnome.desktop.background picture-uri "$1"
-}
-
 
 rwp_exit () {
   echo "$1 is not supported"

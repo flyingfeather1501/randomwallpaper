@@ -272,26 +272,39 @@ rwp_detect () {
 }
 
 rwp_set () {
-  if [[ $1 == mate ]]; then
-    gsettings set org.mate.background picture-filename "$2"
-  elif [[ $1 == gnome ]]; then
-    gsettings set org.gnome.desktop.background picture-uri "file://$2"
-  elif [[ $1 == cinnamon ]]; then
-    gsettings set org.cinnamon.desktop.background picture-uri "file://$2"
-  elif [[ $1 == feh ]]; then
-    feh --bg-scale "$2"
-  elif [[ $1 == pcmanfm ]]; then
-    pcmanfm --set-wallpaper "$2"
-  elif [[ $1 == pcmanfm-qt ]]; then
-    pcmanfm-qt --set-wallpaper "$2"
-  elif [[ $1 == xfce ]]; then
-    export rwp_set_xfce_wspc=$(($(xfconf-query -c xfwm4 -p /general/workspace_count)-1))
-    for ((i=rwp_set_xfce_wspc; i>=0; i--)); do
-      xfconf-query -c xfce4-desktop -p /backdrop/screen0/monitor0/workspace$i/last-image -s "$2"
-    done
-  elif [[ $1 == deepin ]]; then
-    gsettings set com.deepin.wrap.gnome.desktop.background picture-uri "$2"
-  fi
+  case $1 in
+    mate)
+      gsettings set org.mate.background picture-filename "$2"
+      ;;
+    gnome)
+      gsettings set org.gnome.desktop.background picture-uri "file://$2"
+      ;;
+    cinnamon)
+      gsettings set org.cinnamon.desktop.background picture-uri "file://$2"
+      ;;
+    feh)
+      feh --bg-scale "$2"
+      ;;
+    pcmanfm)
+      pcmanfm --set-wallpaper "$2"
+      ;;
+    pcmanfm-qt)
+      pcmanfm-qt --set-wallpaper "$2"
+      ;;
+    xfce)
+      export rwp_set_xfce_wspc=$(($(xfconf-query -c xfwm4 -p /general/workspace_count)-1))
+      for ((i=rwp_set_xfce_wspc; i>=0; i--)); do
+        xfconf-query -c xfce4-desktop -p /backdrop/screen0/monitor0/workspace$i/last-image -s "$2"
+      done
+      ;;
+    deepin)
+      gsettings set com.deepin.wrap.gnome.desktop.background picture-uri "$2"
+      ;;
+    *)
+      echo "there's a problem when calling rwp_set"
+      exit 1
+      ;;
+  esac
 }
 
 rwp_exit () {

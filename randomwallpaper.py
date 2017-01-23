@@ -74,7 +74,6 @@ parser.add_argument("-v", "--verbose",
                     help='be verbose',
                     action='store_true')
 args = parser.parse_args()
-print(args.directory)
 
 
 def desktop_detect():
@@ -109,7 +108,7 @@ def desktop_detect():
 
 def handler_detect(desktop):
     """Read a DE string to pick a handler for."""
-    if desktop in ("mate", "cinnamon", "deepin", "xfce"):
+    if desktop in ("mate", "cinnamon", "deepin", "xfce", "kde"):
         return desktop
     elif desktop in ("pantheon", "budgie-desktop", "gnome", "unity"):
         return "gnome"
@@ -157,6 +156,8 @@ def wp_set(handler, wallpaper):
         subprocess.run(['pcmanfm', '--set-wallpaper', wallpaper])
     elif handler == "pcmanfm-qt":
         subprocess.run(['pcmanfm-qt', '--set-wallpaper', wallpaper])
+    elif handler == "kde":
+        subprocess.run(['qdbus', 'org.kde.plasmashell', '/PlasmaShell', 'org.kde.PlasmaShell.evaluateScript', 'var allDesktops = desktops();print (allDesktops);for (i=0;i<allDesktops.length;i++) {d = allDesktops[i];d.wallpaperPlugin = "org.kde.image";d.currentConfigGroup = Array("Wallpaper", "org.kde.image", "General");d.writeConfig("Image", "file://' + wallpaper + '")}'])
     elif handler == "unsupported":
         pass
 

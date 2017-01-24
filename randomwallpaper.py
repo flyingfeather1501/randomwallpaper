@@ -50,14 +50,19 @@ wp_dir = subprocess.check_output(
 #    shell=True).decode("utf8").rstrip() + ".rwp.cfg"
 
 # parse arguments
-parser = argparse.ArgumentParser()
+parser = argparse.ArgumentParser(
+        usage='%(prog)s [-h] [-d DIR] [-s] [-w WP_HANDLER] [-v]',
+        epilog='Available wallpaper handlers: ' + ", ".join(wp_handler_list))
 parser.add_argument("-t", "--time",
+                    metavar='',
                     help='global sleep time, in seconds',
                     default=60,
                     dest='sleep_time_global',
                     type=float)
 parser.add_argument("-d", "--directory",
+                    metavar='',
                     help='wallpaper directory, default:Pictures/Wallpapers',
+                    dest='dir',
                     default=wp_dir)
 parser.add_argument("-s", "--sleep-first",
                     help='sleep before wallpaper change',
@@ -66,6 +71,7 @@ parser.add_argument("-s", "--sleep-first",
 #                     help='specify how long to sleep for individual images\
 #                     using a config file')
 parser.add_argument("-w", "--wallpaper-handler",
+                    metavar='',
                     help='specify the wallpaper handler to use',
                     action='append',
                     dest='wp_handler',
@@ -120,69 +126,75 @@ def handler_detect(desktop):
         return "unsupported"
 
 
-def wp_set(handler, wallpaper):
+def wp_set(handler, wp_path):
     """Set a wallpaper.
 
     Keyword arguments:
     handler -- the wallpaper handler, determines how the wallpaper is set
     wallpaper -- the path to the wallpaper
     """
+    if handler in ["mate", "gnome", "cinnamon", "deepin"]:
+        using_gsettings = True
     if handler == "mate":
-        subprocess.run(
-            ['gsettings', 'set', 'org.mate.background',
-             'picture-filename', wallpaper])
+        schema = 'org.mate.background'
+        key = 'picture-filename'
+        prefix = ""
     elif handler == "gnome":
-        subprocess.run(
-            ['gsettings', 'set', 'org.gnome.desktop.background',
-             'picture-uri', "file://" + wallpaper])
+        schema = 'org.gnome.desktop.background'
+        key = 'picture-uri'
+        prefix = "file://"
     elif handler == "cinnamon":
-        subprocess.run(
-            ['gsettings', 'set', 'org.cinnamon.desktop.background',
-             'picture-uri', "file://" + wallpaper])
-    elif handler == "deepin":
-        subprocess.run(
-            ['gsettings', 'set', 'com.deepin.wrap.gnome.desktop.background',
-             'picture-uri', "file://" + wallpaper])
-    elif handler == "xfce":
+        schema = 'org.cinnamon.desktop.background'
+        key = 'picture-uri'
+        prefix = "file://"
+
+    if using_gsettings is True:
+        subprocess.run(['gsettings', 'set', schema, key, prefix + wp_path])
+
+    if handler == "xfce":
         count = subprocess.check_output(
             'xfconf-query -c xfwm4 -p /general/workspace_count',
             shell=True).decode('utf8').rstrip()
         for i in range(0, count):
             subprocess.run(
                 ['xfconf-query', '-c', 'xfce4-desktop', '-p',
-                 "/backdrop/screen0/monitor0/workspace" + i + "/last-image"
-                 '-s', wallpaper])
-    elif handler == "pcmanfm":
-        subprocess.run(['pcmanfm', '--set-wallpaper', wallpaper])
+                 "/backdrop/screen0/monitor0/workspace" + i + "/last-image",
+                 '-s', wp_path])
+    if handler == "pcmanfm":
+        subprocess.run(['pcmanfm', '--set-wallpaper', wp_path])
     elif handler == "pcmanfm-qt":
-        subprocess.run(['pcmanfm-qt', '--set-wallpaper', wallpaper])
+        subprocess.run(['pcmanfm-qt', '--set-wallpaper', wp_path])
     elif handler == "kde":
-        subprocess.run(['qdbus', 'org.kde.plasmashell', '/PlasmaShell', 'org.kde.PlasmaShell.evaluateScript', 'var allDesktops = desktops();print (allDesktops);for (i=0;i<allDesktops.length;i++) {d = allDesktops[i];d.wallpaperPlugin = "org.kde.image";d.currentConfigGroup = Array("Wallpaper", "org.kde.image", "General");d.writeConfig("Image", "file://' + wallpaper + '")}'])
+        subprocess.run(['qdbus', 'org.kde.plasmashell', '/PlasmaShell', 'org.kde.PlasmaShell.evaluateScript', 'var allDesktops = desktops();print (allDesktops);for (i=0;i<allDesktops.length;i++) {d = allDesktops[i];d.wallpaperPlugin = "org.kde.image";d.currentConfigGroup = Array("Wallpaper", "org.kde.image", "General");d.writeConfig("Image", "file://' + wp_path + '")}'])
     elif handler == "unsupported":
-        pass
+        return NotImplemented
 
 
-if not os.path.isdir(args.directory):
-    if os.path.exists(args.directory):
+if not os.path.isdir(args.dir):
+    if os.path.exists(args.dir):
         print("Provided wallpaper directory is not actually one")
     else:
         print("Provided wallpaper directory does not exist")
     exit(1)
 print(desktop_detect())
 
-while True:
-    if args.sleep_first:
-        time.sleep(args.sleep_time_global)
+try:
+    while True:
+        if args.sleep_first:
+            time.sleep(args.sleep_time_global)
 
-    wp_file = args.directory + "/" + random.choice(os.listdir(args.directory))
-    print(wp_file)
-    if args.wp_handler is None:
-        # handler is empty, auto detect
-        wp_set(handler_detect(desktop_detect()), wp_file)
-    else:
-        # handler has been specified
-        for i in args.wp_handler:
-            wp_set(i, wp_file)
+        wp_file = args.dir + "/" + random.choice(os.listdir(args.dir))
+        print(wp_file)
+        if args.wp_handler is None:
+            # handler is empty, auto detect
+            wp_set(handler_detect(desktop_detect()), wp_file)
+        else:
+            # handler has been specified
+            for i in args.wp_handler:
+                wp_set(i, wp_file)
 
-    if not args.sleep_first:
-        time.sleep(args.sleep_time_global)
+        if not args.sleep_first:
+            time.sleep(args.sleep_time_global)
+except KeyboardInterrupt:
+    print("\n" + "Interrupt signal received")
+    sys.exit()

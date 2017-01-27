@@ -34,6 +34,8 @@ import argparse
 import sys
 import os
 import random
+import fnmatch
+from pathlib import Path
 
 # Default values
 wp_handler_list = [
@@ -68,8 +70,13 @@ parser.add_argument("-s", "--sleep-first",
                     help='sleep before wallpaper change',
                     action='store_true')
 # parser.add_argument("-c", "--config-file",
+#                     metavar='',
+#                     nargs='?',
 #                     help='specify how long to sleep for individual images\
-#                     using a config file')
+#                     using a config file',
+#                     dest='config_file',
+#                     const=os.environ.get("HOME") + '/.rwp.cfg',
+#                     default=False)
 parser.add_argument("-w", "--wallpaper-handler",
                     metavar='',
                     help='specify the wallpaper handler to use',
@@ -80,6 +87,7 @@ parser.add_argument("-v", "--verbose",
                     help='be verbose',
                     action='store_true')
 args = parser.parse_args()
+# print(args.config_file)
 
 
 def desktop_detect():
@@ -135,6 +143,9 @@ def wp_set(handler, wp_path):
     """
     if handler in ["mate", "gnome", "cinnamon", "deepin"]:
         using_gsettings = True
+    else:
+        using_gsettings = False
+
     if handler == "mate":
         schema = 'org.mate.background'
         key = 'picture-filename'
@@ -170,28 +181,61 @@ def wp_set(handler, wp_path):
         return NotImplemented
 
 
+# def parse_config(wp_path, config_path):
+#     with open(config_path, 'r', encoding='utf8') as config:
+#         for line in config:
+#             if fnmatch(wp_path, "*" + line + "*"):
+#                 print(line)
+
+
 if not os.path.isdir(args.dir):
     if os.path.exists(args.dir):
-        print("Provided wallpaper directory is not actually one")
+        print("specified wallpaper path is not a directory, exiting")
     else:
-        print("Provided wallpaper directory does not exist")
+        print("Specified wallpaper path does not exist, exiting")
     exit(1)
 print(desktop_detect())
 
+# it evaluates to False if the user throwes in an empty value
+# if args.config_file:
+#     # if -c was given a value or using default
+#     if os.path.exists(args.config_file):
+#         if not os.path.isfile(args.config_file):
+#             # it is a directory, dont use config
+#             print("Specified config path is a directory, ignoring")
+#             using_config = False
+#         else:
+#             # it is a file, read it later
+#             using_config = True
+#     else:
+#         # it doesnt exist, create it then read it later
+#         Path(args.config_file).touch()
+#         using_config = True
+# else:
+#     # if -c wasn't given
+#     using_config = False
+
+
 try:
     while True:
+        wp_file = args.dir + "/" + random.choice(os.listdir(args.dir))
+
+#        if using_config:
+#            parse_config(wp_file, args.config_file)
+#            sleep_time = config_sleep_time
+#        else:
+#            sleep_time = sleep_time_global
+
         if args.sleep_first:
             time.sleep(args.sleep_time_global)
 
-        wp_file = args.dir + "/" + random.choice(os.listdir(args.dir))
-        print(wp_file)
         if args.wp_handler is None:
             # handler is empty, auto detect
             wp_set(handler_detect(desktop_detect()), wp_file)
         else:
             # handler has been specified
-            for i in args.wp_handler:
-                wp_set(i, wp_file)
+            for h in args.wp_handler:
+                wp_set(h, wp_file)
 
         if not args.sleep_first:
             time.sleep(args.sleep_time_global)

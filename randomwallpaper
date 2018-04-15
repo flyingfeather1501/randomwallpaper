@@ -283,7 +283,7 @@ rwp_set () {
       gsettings set org.cinnamon.desktop.background picture-uri "file://$2"
       ;;
     feh)
-      feh --bg-scale "$2"
+      feh --bg-fill "$2"
       ;;
     pcmanfm)
       pcmanfm --set-wallpaper "$2"

@@ -160,15 +160,15 @@ EOF
     if [[ $rwp_cfg_file_set == 1 ]]; then
       # Read cfg file
       while read -r line; do
-        if echo $rwp_wallpaper | grep "${line%\ *}" > /dev/null; then  # if rwp_wallpaper is in the cfg
+        if echo "$rwp_wallpaper" | grep "${line%\ *}" > /dev/null; then  # if rwp_wallpaper is in the cfg
           rwp_sleep_time=${line##*\ }  # set rwp_sleep_time to that defined in the cfg
           rwp_cfg_used=1
-          [[ $rwp_verbose == 1 ]] && echo rwp_sleep_time for this image is $rwp_sleep_time
+          [[ "$rwp_verbose" == 1 ]] && echo rwp_sleep_time for this image is "$rwp_sleep_time"
           break
         else
           rwp_cfg_used=0
         fi
-      done < $rwp_cfg
+      done < "$rwp_cfg"
     fi
 
     # Use default rwp_sleep_time
@@ -180,19 +180,19 @@ EOF
 
     # sleep first if $rwp_sleep_first=1
     if [[ $rwp_sleep_first == 1 ]]; then
-      sleep $rwp_sleep_time
+      sleep "$rwp_sleep_time"
     fi
 
     # for every handler, if $rwp_handler contains a handler, run it
     # No need to worry about auto, if $rwp_handler == auto it'd be set to
     # something else in rwp_detect
     for i in "${rwp_handler_list[@]}"; do
-      [[ ${rwp_handler[*]} =~ $i ]] && rwp_set $i "$rwp_wallpaper"
+      [[ ${rwp_handler[*]} =~ $i ]] && rwp_set "$i" "$rwp_wallpaper"
     done
 
     # sleep after if $rwp_sleep_first=0
     if [[ $rwp_sleep_first == 0 ]]; then
-      sleep $rwp_sleep_time
+      sleep "$rwp_sleep_time"
     fi
 
   done

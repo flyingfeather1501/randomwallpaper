@@ -312,37 +312,32 @@ rwp_exit () {
   exit 1
 }
 
-#~~~ Functions ~~~#
+main () {
+  rwp_init_vars
+  rwp_getopts "$@"
 
+  # check whether $rwp_dir exists
+  if [[ ! -d "$rwp_dir" ]]; then
+    echo "$rwp_dir does not exist"
+    exit 1
+  fi
 
-#### Main Logic ####
+  if [[ $rwp_verbose == 1 ]]; then
+    echo "rwp_sleep_time_def is $rwp_sleep_time_def"
+    echo "rwp_dir is $rwp_dir"
+    echo "rwp_cfg is $rwp_cfg"
+    echo "${rwp_handler[*]}"
+  fi
 
-rwp_init_vars
-rwp_getopts "$@"
+  if [[ ${rwp_handler[0]} == auto ]]; then
+    # Detect Desktop
+    rwp_detect # will set rwp_handler according to environment variables
+    [[ $rwp_verbose == 1 ]] && echo "Wallpaper handlers: ${rwp_handler[*]}" # it does not exist
+    rwp_loop
+  else # when rwp_handler is set
+    [[ $rwp_verbose == 1 ]] && echo "Wallpaper handlers: ${rwp_handler[*]}"
+    rwp_loop
+  fi
+}
 
-# check whether $rwp_dir exists
-if [[ ! -d "$rwp_dir" ]]; then
-  echo "$rwp_dir does not exist"
-  exit 1
-fi
-
-if [[ $rwp_verbose == 1 ]]; then
-  echo "rwp_sleep_time_def is $rwp_sleep_time_def"
-  echo "rwp_dir is $rwp_dir"
-  echo "rwp_cfg is $rwp_cfg"
-  echo "${rwp_handler[*]}"
-fi
-
-if [[ ${rwp_handler[0]} == auto ]]; then
-  # Detect Desktop
-  rwp_detect # will set rwp_handler according to environment variables
-  [[ $rwp_verbose == 1 ]] && echo "Wallpaper handlers: ${rwp_handler[*]}" # it does not exist
-  rwp_loop
-else # when rwp_handler is set
-  [[ $rwp_verbose == 1 ]] && echo "Wallpaper handlers: ${rwp_handler[*]}"
-  rwp_loop
-fi
-
-#~~~ Main Logic ~~~#
-
-# Main Logic is not a function because we'll never call it.
+main "$@"

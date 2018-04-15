@@ -146,7 +146,10 @@ rwp_loop () {
   while :; do
 
     # Rescan file list
-    rwp_files=($rwp_dir/*)
+    mapfile rwp_files <<EOF
+    $(find "$rwp_dir"/*)
+EOF
+
     # Randomly select a file
     rwp_wallpaper="${rwp_files[RANDOM % ${#rwp_files[@]}]}"
 

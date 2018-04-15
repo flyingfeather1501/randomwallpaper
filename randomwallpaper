@@ -195,12 +195,12 @@ EOF
       [[ ${rwp_handler[*]} =~ $i ]] && rwp_set "$i" "$rwp_wallpaper"
     done
 
+    [[ $rwp_oneshot == 1 ]] && break
+
     # sleep after if $rwp_sleep_first=0
     if [[ $rwp_sleep_first == 0 ]]; then
       sleep "$rwp_sleep_time"
     fi
-
-    [[ $rwp_oneshot == 1 ]] && break
 
   done
 }

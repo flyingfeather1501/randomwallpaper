@@ -151,7 +151,7 @@ rwp_loop () {
   while :; do
 
     # Rescan file list
-    mapfile rwp_files <<EOF
+    mapfile -t rwp_files <<EOF
     $(find "$rwp_dir"/*)
 EOF
 

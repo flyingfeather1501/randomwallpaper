@@ -321,9 +321,7 @@ rwp_init_vars
 rwp_getopts "$@"
 
 # check whether $rwp_dir exists
-if ls $rwp_dir > /dev/null; then
-  rwp_files=($rwp_dir/*)
-else
+if [[ ! -d "$rwp_dir" ]]; then
   echo "$rwp_dir does not exist"
   exit 1
 fi

@@ -95,17 +95,17 @@ rwp_getopts () {
       ;;
     w)
       rwp_handler[0]=noauto
-      case $OPTARG in
-      MATE|mate)
+      case "${OPTARG,,}" in
+      mate)
           rwp_handler+=('mate')
           ;;
-      GNOME|gnome)
+      gnome)
           rwp_handler+=('gnome')
           ;;
-      XFCE|xfce)
+      xfce)
           rwp_handler+=('xfce')
           ;;
-      LXDE|lxde)
+      lxde)
           rwp_handler+=('pcmanfm')
           ;;
       pcmanfm)
@@ -114,16 +114,16 @@ rwp_getopts () {
       pcmanfm-qt)
           rwp_handler+=('pcmanfm-qt')
           ;;
-      Cinnamon|cinnamon)
       plasma|kde|plasma-desktop)
           rwp_handler+=('plasma')
           ;;
+      cinnamon)
           rwp_handler+=('cinnamon')
           ;;
       feh)
           rwp_handler+=('feh')
           ;;
-      deepin|Deepin)
+      deepin)
           rwp_handler+=('deepin')
           ;;
       *)

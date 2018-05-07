@@ -37,7 +37,7 @@ rwp_init_vars () {
   rwp_handler=('auto')
   rwp_cfg_used=0
   rwp_cfg=none
-  rwp_handler_list=(mate gnome xfce pcmanfm pcmanfm-qt cinnamon feh deepin)
+  rwp_handler_list=(mate gnome xfce pcmanfm pcmanfm-qt cinnamon feh deepin plasma)
   rwp_verbose=0
   rwp_oneshot=0
 
@@ -115,6 +115,9 @@ rwp_getopts () {
           rwp_handler+=('pcmanfm-qt')
           ;;
       Cinnamon|cinnamon)
+      plasma|kde|plasma-desktop)
+          rwp_handler+=('plasma')
+          ;;
           rwp_handler+=('cinnamon')
           ;;
       feh)
@@ -272,8 +275,10 @@ rwp_detect () {
     rwp_handler=('deepin')
 
   # KDE
-  elif [[ $GDMSESSION == "plasma_desktop" ]]; then
-    rwp_exit "KDE Plasma"
+  elif [[
+  $GDMSESSION == "plasma_desktop" ||
+  $XDG_CURRENT_DESKTOP == "plasma" ]]; then
+    rwp_handler=('plasma')
 
   # Other
   else
@@ -300,6 +305,19 @@ rwp_set () {
       ;;
     pcmanfm-qt)
       pcmanfm-qt --set-wallpaper "$2"
+      ;;
+    plasma)
+        qdbus org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript "$(cat <<JS
+var allDesktops = desktops();
+print (allDesktops);
+for (i=0;i<allDesktops.length;i++) {
+    d = allDesktops[i];
+    d.wallpaperPlugin = "org.kde.image";
+    d.currentConfigGroup = Array("Wallpaper", "org.kde.image", "General");
+    d.writeConfig("Image", "file://$2")
+}
+JS
+      )"
       ;;
     xfce)
       export rwp_set_xfce_wspc=$(($(xfconf-query -c xfwm4 -p /general/workspace_count)-1))

@@ -54,7 +54,7 @@ rwp_init_vars () {
 
 # Handle Options
 rwp_getopts () {
-  while getopts "h?t:d:c:w:lvso" rwp_opt; do
+  while getopts "h?t:d:c:w:S:lvso" rwp_opt; do
     case "$rwp_opt" in
     h|\?)
         echo "
@@ -64,6 +64,7 @@ rwp_getopts () {
    -t <time>                Set global wait time (default:1m)
    -d <DIR>                 Set wallpaper directory (default:$rwp_dir)
    -s                       Sleep before changing wallpaper, overwrites -o
+   -S <path>                Set wallpaper to <path>
    -c <config file>         Use config file to set wait time for individual images
    -w <wallpaper handler>   Set wallpaper handler manually (default:auto)
    -l                       List all wallpaper handlers
@@ -130,6 +131,10 @@ rwp_getopts () {
           IFS=,; echo Available wallpaper handlers: "${rwp_handler_list[*]}"
           exit 1
       esac
+      ;;
+    S)
+      rwp_just_set=1
+      rwp_wallpaper="$OPTARG"
       ;;
     s)
       rwp_sleep_first=1
@@ -340,6 +345,16 @@ rwp_exit () {
   exit 1
 }
 
+rwp_loop_or_set () {
+    if [[ $rwp_just_set == 1 ]]; then
+        for i in "${rwp_handler_list[@]}"; do
+            [[ ${rwp_handler[*]} =~ $i ]] && rwp_set "$i" "$rwp_wallpaper"
+        done
+    else
+        rwp_loop
+    fi
+}
+
 main () {
   rwp_init_vars
   rwp_getopts "$@"
@@ -361,10 +376,10 @@ main () {
     # Detect Desktop
     rwp_detect # will set rwp_handler according to environment variables
     [[ $rwp_verbose == 1 ]] && echo "Wallpaper handlers: ${rwp_handler[*]}" # it does not exist
-    rwp_loop
+    rwp_loop_or_set
   else # when rwp_handler is set
     [[ $rwp_verbose == 1 ]] && echo "Wallpaper handlers: ${rwp_handler[*]}"
-    rwp_loop
+    rwp_loop_or_set
   fi
 }
 

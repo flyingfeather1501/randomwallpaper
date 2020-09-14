@@ -160,7 +160,7 @@ rwp_loop () {
 
     # Rescan file list
     mapfile -t rwp_files <<EOF
-    $(find "$rwp_dir"/*)
+    $(find "$rwp_dir"/* -maxdepth 1)
 EOF
 
     # Randomly select a file
